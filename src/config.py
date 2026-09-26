@@ -35,7 +35,13 @@ EBAY_SCOPE = "https://api.ebay.com/oauth/api_scope"
 
 # --- What to search for ---------------------------------------------------
 # Broad laptop deal-hunting: workstation / gaming laptops likely to have a
-# capable NVIDIA GPU + high RAM. Add/remove queries freely.
+# capable GPU + high RAM. Add/remove queries freely.
+#
+# Originally this list skewed almost entirely NVIDIA (ThinkPad/Precision/
+# ZBook workstation lines, plus Legion/ROG/Titan/Blade gaming lines that are
+# usually NVIDIA-equipped). The block below adds laptops that specifically
+# ship with AMD Radeon RX 6000M/7000M-series mobile GPUs, now that those are
+# scored (see GPU_TIERS), so AMD-based deals actually get pulled in.
 SEARCH_QUERIES = [
     "ThinkPad P1",
     "ThinkPad P15",
@@ -52,6 +58,17 @@ SEARCH_QUERIES = [
     "MSI Creator",
     "MSI Titan",
     "Razer Blade 15",
+
+    # --- AMD Radeon RX 6000M/7000M mobile GPU laptops ---
+    "ASUS ROG Strix Advantage Edition",
+    "Alienware m15 R7 AMD",
+    "Alienware m17 R5",
+    "ASUS TUF Gaming A15",
+    "ASUS TUF Gaming A16",
+    "ASUS TUF Dash F15",
+    "HP Omen 16 AMD",
+    "Lenovo Legion 5 Pro AMD",
+    "Framework Laptop 16",
 ]
 
 # Category ID for "PC Laptops & Netbooks" on eBay US, used to keep results
@@ -77,10 +94,23 @@ SPEC_TARGETS = {
     "min_score_to_alert": 60,  # 0-100 scale; below this, don't surface it
 }
 
-# NVIDIA GPUs worth caring about, roughly ordered by desirability.
-# Workstation (RTX A-series / Quadro) and higher-end gaming GPUs score best.
-# Bare numeric forms (e.g. "T2000" without the word "Quadro") are included
-# since eBay sellers frequently drop the "Quadro"/"NVIDIA" prefix.
+# GPUs worth caring about, roughly ordered by desirability within each tier.
+# Workstation (RTX A-series / Quadro / Radeon Pro) and higher-end gaming
+# GPUs score best. Bare numeric forms (e.g. "T2000" without the word
+# "Quadro", or "6800M" without "RX") are included since eBay sellers
+# frequently drop brand/line prefixes in titles.
+#
+# AMD mobile GPUs are slotted into the existing tiers by rough performance
+# parity with their NVIDIA counterparts:
+#   Gaming (Radeon RX 6000M/7000M series):
+#     - RX 6850M XT / RX 6800M            ~ RTX 3070 Ti-3080 mobile  -> gaming_high
+#     - RX 6700M / RX 6650M XT / RX 6600M
+#       / RX 7600M XT                     ~ RTX 3060-4060 mobile     -> gaming_mid
+#     - RX 6500M / RX 5600M / RX 5500M    ~ entry/older mobile dGPU  -> gaming_low
+#   Workstation (Radeon Pro W-series mobile, e.g. HP ZBook Fury configs):
+#     - Radeon Pro W6800M                 ~ RTX A5000/A4500 mobile   -> workstation_high
+#     - Radeon Pro W6600M                 ~ RTX A3000/A2000 mobile   -> workstation_mid
+#     - Radeon Pro W6500M                 ~ RTX A1000/A500 mobile    -> workstation_entry
 GPU_TIERS = {
     "workstation_high": (25, [
         "RTX A5000", "RTX A4500", "RTX A4000",
@@ -88,6 +118,7 @@ GPU_TIERS = {
         "QUADRO P5000",
         "A5000", "A4500", "A4000", "P5000",  # bare forms
         "RTX 5000", "RTX 4000",  # HP's naming for RTX A5000/A4000-class GPUs
+        "RADEON PRO W6800M", "W6800M",
     ]),
     "workstation_mid": (20, [
         "RTX A3000", "RTX A2000",
@@ -95,6 +126,7 @@ GPU_TIERS = {
         "QUADRO P4000", "QUADRO P3200", "QUADRO P2000", "QUADRO M2200",
         "T2000", "T1200", "T1000", "A3000", "A2000", "P4000", "P3200", "P2000",
         "RTX 3000", "RTX 2000",  # HP naming; also covers "RTX 2000 Ada"
+        "RADEON PRO W6600M", "W6600M",
     ]),
     "workstation_entry": (12, [
         "RTX A500", "A500", "A1000",
@@ -103,31 +135,42 @@ GPU_TIERS = {
         "P620", "P520", "P2200", "P1000",
         "QUADRO M1000M", "M1000M", "M2200",
         "RTX 1000",  # HP naming; also covers "RTX 1000 Ada"
+        "RADEON PRO W6500M", "W6500M",
     ]),
     "gaming_high": (22, [
         "RTX 5090", "RTX 5080", "RTX 5070",
         "RTX 4090", "RTX 4080", "RTX 4070", "RTX 3080", "RTX 3070",
+        # AMD: ~RTX 3070 Ti-3080 mobile performance
+        "RX 6850M XT", "RX 6800M", "6850M XT", "6800M",
     ]),
     "gaming_mid": (16, [
         "RTX 5060", "RTX 4060", "RTX 3060",
         "RTX 4050", "RTX 3050 TI", "RTX 3050",
         "RTX 2080", "RTX 2070",  # older but still solid gaming-tier
+        # AMD: ~RTX 3060-4060 mobile performance
+        "RX 7600M XT", "RX 6700M", "RX 6650M XT", "RX 6600M",
+        "7600M XT", "6700M", "6650M XT", "6600M",
     ]),
     "gaming_low": (8, [
         "GTX 1660", "GTX 1650 TI", "GTX 1650", "GTX 1050 TI", "GTX 1050",
         "GTX 1080", "GTX 1070", "GTX 1060",
         "RTX 2060", "MX 550", "MX 450", "MX150", "MX 150",
         "1650 TI", "1650", "1050 TI", "1050",  # bare, "GTX" often dropped
+        # AMD: entry/older mobile dGPU
+        "RX 6500M", "RX 5600M", "RX 5500M",
+        "6500M", "5600M", "5500M",
     ]),
 }
 
-# Fallback tier for any GPU that matches a generic RTX/GTX/Quadro/MX + model
-# number pattern but isn't in the explicit lists above (new/unlisted models
-# still get partial credit instead of scoring as if there's no GPU at all).
+# Fallback tier for any GPU that matches a generic RTX/GTX/Quadro/MX/RX +
+# model number pattern but isn't in the explicit lists above (new/unlisted
+# models still get partial credit instead of scoring as if there's no GPU
+# at all).
 GPU_OTHER_POINTS = 5
 
-# Even lower fallback: title mentions a dGPU brand (Nvidia/Quadro/RTX/GeForce)
-# but no model number at all — still worth a little more than "no GPU".
+# Even lower fallback: title mentions a dGPU brand (Nvidia/Quadro/RTX/
+# GeForce/Radeon) but no model number at all — still worth a little more
+# than "no GPU".
 GPU_GENERIC_MENTION_POINTS = 3
 
 # Chassis families known for dual M.2 slots / strong build quality — small
@@ -163,6 +206,7 @@ BRAND_KEYWORDS = [
     ("Acer", ["ACER", "PREDATOR", "NITRO"]),
     ("Microsoft", ["SURFACE"]),
     ("Samsung", ["SAMSUNG"]),
+    ("Framework", ["FRAMEWORK"]),
 ]
 
 # Web app settings

@@ -6,9 +6,12 @@ cd "$(dirname "$0")"
 
 if [ -f .env ]; then
   set -a
-  # shellcheck disable=SC1091
   source .env
   set +a
 fi
 
-exec python3 -m src.webapp
+# Use the venv's python directly instead of `source venv/bin/activate` —
+# launchd runs this without a login shell, so activation can silently no-op
+# and fall through to whatever system python3 is first on launchd's (bare)
+# PATH. That's exactly the "No module named 'flask'" you're seeing.
+exec ./venv/bin/python -m src.webapp

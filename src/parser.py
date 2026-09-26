@@ -38,15 +38,21 @@ _CPU_RE = re.compile(
 _STORAGE_RE = re.compile(
     r"(\d+(?:\.\d+)?)\s?(TB|GB)\s?(SSD|NVMe|HDD|Storage)?", re.IGNORECASE
 )
-# Generic fallback: any RTX/GTX/Quadro/MX + model number not covered by the
-# explicit GPU_TIERS lists in config.py still gets flagged (as "gpu_other")
-# instead of scoring as if there's no GPU at all — keeps new/unlisted models
-# from being penalized just because they're not in the hand-maintained list.
+# Generic fallback: any RTX/GTX/Quadro/MX/RX/Radeon-Pro-W + model number not
+# covered by the explicit GPU_TIERS lists in config.py still gets flagged
+# (as "gpu_other") instead of scoring as if there's no GPU at all — keeps
+# new/unlisted models (NVIDIA or AMD) from being penalized just because
+# they're not in the hand-maintained list. The RX branch is deliberately
+# anchored to an "M" (mobile) or "XT" suffix, or both, to avoid
+# false-matching unrelated 3-4 digit numbers in a title; the W-series branch
+# is anchored the same way (mobile "M" suffix) for the same reason.
 _GPU_FALLBACK_RE = re.compile(
-    r"(RTX\s?A?\d{3,5}(\s?TI)?|GTX\s?\d{3,4}(\s?TI)?|QUADRO\s?\w*\s?\d{3,4}|MX\s?\d{3,4})",
+    r"(RTX\s?A?\d{3,5}(\s?TI)?|GTX\s?\d{3,4}(\s?TI)?|QUADRO\s?\w*\s?\d{3,4}|MX\s?\d{3,4}"
+    r"|RX\s?\d{3,4}M(\s?XT)?|RX\s?\d{3,4}\s?XT"
+    r"|W\d{3,5}M)",
     re.IGNORECASE,
 )
-_GPU_GENERIC_MENTION_RE = re.compile(r"\b(NVIDIA|QUADRO|GEFORCE|RTX)\b", re.IGNORECASE)
+_GPU_GENERIC_MENTION_RE = re.compile(r"\b(NVIDIA|QUADRO|GEFORCE|RTX|RADEON)\b", re.IGNORECASE)
 
 
 def _find_ram(text: str) -> int | None:
@@ -75,7 +81,8 @@ def _find_gpu(text: str) -> tuple[str | None, str | None, int]:
                     best_tier, best_points, best_model = tier, points, model
     if best_model is None:
         # nothing in the explicit lists matched — try the generic fallback
-        # so unlisted/newer GPU models still register as *something*.
+        # so unlisted/newer GPU models (NVIDIA or AMD) still register as
+        # *something*.
         match = _GPU_FALLBACK_RE.search(upper)
         if match:
             best_model = re.sub(r"\s+", " ", match.group(1)).strip()

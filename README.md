@@ -209,4 +209,6 @@ are excluded from processing entirely (for now).
   - Add AMD GPUs to tierlist
   - Update search query list
   - Add toggle for parts, broken, etc.
-  
+  - Add CPUs to scoring
+  - Fix search bar
+  - Fix "check for sold"
