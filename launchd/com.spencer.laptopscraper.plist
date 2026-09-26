@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.spencer.laptopscraper</string>
+
+    <!-- EDIT THIS PATH to wherever you put the project folder -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/truckerbug/laptop-deal-scraper/run.sh</string>
+    </array>
+
+    <!-- Run once an hour (3600 seconds) -->
+    <key>StartInterval</key>
+    <integer>3600</integer>
+
+    <!-- Also run once immediately when the job is loaded -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/truckerbug/laptop-deal-scraper/data/launchd.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/truckerbug/laptop-deal-scraper/data/launchd.err.log</string>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/truckerbug/laptop-deal-scraper</string>
+</dict>
+</plist>

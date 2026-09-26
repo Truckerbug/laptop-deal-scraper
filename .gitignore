@@ -1,0 +1,11 @@
+# basics
+.DS_Store
+
+# output
+output
+
+# project data
+/data/
+
+# environment (don't leak yourself!)
+.env

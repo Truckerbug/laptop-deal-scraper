@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deal Scanner — Laptop Watch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #12151a;
+    --panel: #1a1e25;
+    --panel-raised: #20252d;
+    --border: #2a3038;
+    --text: #e4e8ee;
+    --muted: #7c8695;
+    --amber: #e8a848;
+    --amber-dim: #6b5530;
+    --teal: #5fb8c9;
+    --good: #6fcf7a;
+    --mid: #e8a848;
+    --low: #55606f;
+    --danger: #e06b6b;
+    --radius: 6px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+  }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 1.1rem 1.5rem;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  header h1 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0;
+    letter-spacing: 0.02em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  header h1::before {
+    content: "";
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--good);
+    box-shadow: 0 0 8px var(--good);
+    display: inline-block;
+  }
+  #stats { color: var(--muted); font-size: 0.8rem; }
+  #stats .mono { color: var(--teal); }
+
+  .controls {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+    background: var(--panel);
+  }
+  .search-row { display: flex; gap: 0.5rem; flex: 1 1 320px; min-width: 260px; }
+  #search-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    padding: 0.55rem 0.7rem 0.55rem 1.6rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    position: relative;
+  }
+  .search-wrap { position: relative; flex: 1; display: flex; align-items: center; }
+  .search-wrap::before {
+    content: ">";
+    position: absolute;
+    left: 0.65rem;
+    color: var(--amber);
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    pointer-events: none;
+  }
+  .search-wrap input { width: 100%; }
+
+  button {
+    background: var(--panel-raised);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.55rem 0.9rem;
+    border-radius: var(--radius);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  button:hover { border-color: var(--amber-dim); }
+  button:disabled { opacity: 0.5; cursor: default; }
+  button.primary {
+    background: var(--amber);
+    border-color: var(--amber);
+    color: #1a1408;
+    font-weight: 600;
+  }
+  button.primary:hover { filter: brightness(1.08); }
+
+  .filters {
+    padding: 0.8rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 1.4rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    font-size: 0.78rem;
+    color: var(--muted);
+  }
+  .filter-group { display: flex; flex-direction: column; gap: 0.3rem; }
+  .filter-group label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .filter-group select, .filter-group input[type=number] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: var(--radius);
+    padding: 0.35rem 0.5rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+  }
+  .price-range { display: flex; align-items: center; gap: 0.35rem; }
+  .price-range input { width: 70px; }
+  #score-slider { width: 130px; accent-color: var(--amber); }
+  #score-val { color: var(--amber); }
+  .chip-row { display: flex; gap: 0.35rem; flex-wrap: wrap; max-width: 320px; }
+  .chip {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 0.25rem 0.65rem;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.75rem;
+  }
+  .chip.active { border-color: var(--teal); color: var(--teal); background: rgba(95,184,201,0.08); }
+  #reset-filters { align-self: flex-end; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    text-align: left;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    white-space: nowrap;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+  }
+  thead th:hover { color: var(--teal); }
+  thead th.sorted { color: var(--amber); }
+  thead th .arrow { font-size: 0.65rem; margin-left: 2px; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+  }
+  tbody tr:hover { background: var(--panel); }
+  td { padding: 0.65rem 0.9rem; vertical-align: middle; }
+
+  .signal { display: flex; align-items: center; gap: 6px; }
+  .signal .bars { display: flex; gap: 2px; align-items: flex-end; height: 16px; }
+  .signal .bars span { width: 4px; background: var(--border); border-radius: 1px; }
+  .signal .bars span:nth-child(1) { height: 25%; }
+  .signal .bars span:nth-child(2) { height: 50%; }
+  .signal .bars span:nth-child(3) { height: 75%; }
+  .signal .bars span:nth-child(4) { height: 100%; }
+  .signal.good .bars span.on { background: var(--good); }
+  .signal.mid .bars span.on { background: var(--mid); }
+  .signal.low .bars span.on { background: var(--low); }
+  .signal .score-num { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 0.85rem; }
+  .signal.good .score-num { color: var(--good); }
+  .signal.mid .score-num { color: var(--mid); }
+  .signal.low .score-num { color: var(--low); }
+
+  .price { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 0.92rem; }
+  .title-cell a { color: var(--text); text-decoration: none; font-size: 0.88rem; line-height: 1.3; }
+  .title-cell a:hover { color: var(--teal); }
+  .subtags { color: var(--muted); font-size: 0.72rem; margin-top: 0.15rem; }
+  .enrich-btn {
+    background: none; border: 1px solid var(--amber-dim); color: var(--amber);
+    font-size: 0.68rem; padding: 0.08rem 0.4rem; border-radius: 4px;
+    margin-left: 0.4rem; cursor: pointer;
+  }
+  .enrich-btn:hover { border-color: var(--amber); }
+  .enrich-btn:disabled { opacity: 0.6; cursor: default; }
+  .spec-cell { font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem; color: var(--text); }
+  .spec-cell.empty { color: var(--low); }
+  .brand-tag {
+    font-size: 0.7rem; color: var(--teal); border: 1px solid var(--border);
+    border-radius: 4px; padding: 0.1rem 0.4rem; display: inline-block;
+  }
+  .sold-tag {
+    font-size: 0.65rem; font-weight: 700; color: var(--danger);
+    border: 1px solid var(--danger); border-radius: 4px;
+    padding: 0.05rem 0.35rem; margin-right: 0.4rem; letter-spacing: 0.03em;
+  }
+
+  #empty-state {
+    padding: 3rem 1rem;
+    text-align: center;
+    color: var(--muted);
+  }
+  #empty-state .hint { font-size: 0.8rem; margin-top: 0.4rem; }
+
+  #status-bar {
+    padding: 0.5rem 1.5rem;
+    font-size: 0.75rem;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    min-height: 1.5em;
+  }
+  #status-bar.error { color: var(--danger); }
+  #status-bar.busy { color: var(--amber); }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>DEAL SCANNER <span class="mono" style="color:var(--muted); font-weight:400;">/ laptop watch</span></h1>
+  <div id="stats">— <span class="mono" id="stat-count">0</span> tracked &middot; <span class="mono" id="stat-alert">0</span> above threshold</div>
+</header>
+
+<div class="controls">
+  <div class="search-row">
+    <div class="search-wrap">
+      <input type="text" id="search-input" placeholder="search eBay for a specific model or term...">
+    </div>
+    <button class="primary" id="search-btn">Search eBay</button>
+  </div>
+  <button id="rescan-btn" title="Re-run all configured watch queries now">Rescan all watches</button>
+  <button id="enrich-missing-btn" title="Fetch full listing details for rows still missing GPU/RAM/storage">Fill in missing specs</button>
+  <button id="sweep-sold-btn" title="Check stale listings against eBay directly and mark any that sold/ended">Check for sold</button>
+</div>
+
+<div class="filters">
+  <div class="filter-group">
+    <label>Min score: <span id="score-val" class="mono">0</span></label>
+    <input type="range" id="score-slider" min="0" max="100" value="0" step="5">
+  </div>
+  <div class="filter-group">
+    <label>Price range</label>
+    <div class="price-range mono">
+      <input type="number" id="price-min" placeholder="min">
+      <span>–</span>
+      <input type="number" id="price-max" placeholder="max">
+    </div>
+  </div>
+  <div class="filter-group">
+    <label>Min RAM</label>
+    <select id="ram-filter" class="mono">
+      <option value="0">Any</option>
+      <option value="16">16GB+</option>
+      <option value="32">32GB+</option>
+      <option value="64">64GB+</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Brand</label>
+    <div class="chip-row" id="brand-chips"></div>
+  </div>
+  <div class="filter-group">
+    <label>GPU tier</label>
+    <div class="chip-row" id="gpu-chips"></div>
+  </div>
+  <div class="filter-group">
+    <label>Text filter</label>
+    <input type="text" id="text-filter" class="mono" placeholder="filter loaded results..." style="width:160px;">
+  </div>
+  <div class="filter-group">
+    <label style="visibility:hidden;">Sold</label>
+    <label style="display:flex; align-items:center; gap:0.4rem; cursor:pointer; font-size:0.78rem; color:var(--text);">
+      <input type="checkbox" id="hide-sold-toggle" checked style="accent-color:var(--amber);">
+      Hide sold/ended
+    </label>
+  </div>
+  <button id="reset-filters">Reset filters</button>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th data-key="score">Signal <span class="arrow"></span></th>
+      <th data-key="price">Price <span class="arrow"></span></th>
+      <th data-key="brand">Brand <span class="arrow"></span></th>
+      <th data-key="title">Listing <span class="arrow"></span></th>
+      <th data-key="ram_gb">RAM <span class="arrow"></span></th>
+      <th data-key="gpu">GPU <span class="arrow"></span></th>
+      <th data-key="cpu">CPU <span class="arrow"></span></th>
+      <th data-key="storage_gb">Storage <span class="arrow"></span></th>
+      <th data-key="last_seen">Seen <span class="arrow"></span></th>
+    </tr>
+  </thead>
+  <tbody id="table-body"></tbody>
+</table>
+
+<div id="empty-state" style="display:none;">
+  <div>No listings match your filters yet.</div>
+  <div class="hint">Try widening the price range, lowering min score, or search eBay for a specific model above.</div>
+</div>
+
+<div id="status-bar"></div>
+
+<script>
+const GPU_TIER_ORDER = ["workstation_high","workstation_mid","workstation_entry","gaming_high","gaming_mid","gaming_low","gpu_other","gpu_generic"];
+const GPU_TIER_LABEL = {
+  workstation_high: "Workstation (top)", workstation_mid: "Workstation",
+  workstation_entry: "Workstation (entry)",
+  gaming_high: "Gaming (high)", gaming_mid: "Gaming (mid)", gaming_low: "Gaming (entry)",
+  gpu_other: "Other dGPU", gpu_generic: "dGPU (unspecified)"
+};
+
+let allListings = [];
+let activeBrands = new Set();
+let activeGpuTiers = new Set();
+let sortKey = "score";
+let sortDir = -1; // -1 desc, 1 asc
+
+const $ = (sel) => document.querySelector(sel);
+const statusBar = $("#status-bar");
+
+function setStatus(msg, type) {
+  statusBar.textContent = msg || "";
+  statusBar.className = type || "";
+}
+
+function fmtAgo(unixSeconds) {
+  if (!unixSeconds) return "—";
+  const diff = Date.now() / 1000 - unixSeconds;
+  if (diff < 90) return "just now";
+  if (diff < 3600) return Math.round(diff / 60) + "m ago";
+  if (diff < 86400) return Math.round(diff / 3600) + "h ago";
+  return Math.round(diff / 86400) + "d ago";
+}
+
+function signalTier(score) {
+  if (score >= 75) return "good";
+  if (score >= 55) return "mid";
+  return "low";
+}
+
+function signalHtml(score) {
+  const tier = signalTier(score);
+  const bars = Math.max(1, Math.round(score / 25));
+  let barsHtml = "";
+  for (let i = 1; i <= 4; i++) {
+    barsHtml += `<span class="${i <= bars ? 'on' : ''}"></span>`;
+  }
+  return `<div class="signal ${tier}"><div class="bars">${barsHtml}</div><div class="score-num">${score}</div></div>`;
+}
+
+async function loadListings() {
+  setStatus("Loading...", "busy");
+  try {
+    const res = await fetch("/api/listings");
+    const data = await res.json();
+    allListings = data.listings;
+    renderBrandChips(data.brands);
+    renderGpuChips(data.gpu_tiers);
+    const activeCount = allListings.filter(l => l.active !== false).length;
+    $("#stat-count").textContent = activeCount;
+    $("#stat-alert").textContent = allListings.filter(l => l.active !== false && l.score >= data.min_score_to_alert).length;
+    setStatus("");
+    render();
+  } catch (e) {
+    setStatus("Failed to load listings: " + e, "error");
+  }
+}
+
+function renderBrandChips(brands) {
+  const el = $("#brand-chips");
+  el.innerHTML = "";
+  brands.forEach(b => {
+    const chip = document.createElement("div");
+    chip.className = "chip" + (activeBrands.has(b) ? " active" : "");
+    chip.textContent = b;
+    chip.onclick = () => {
+      activeBrands.has(b) ? activeBrands.delete(b) : activeBrands.add(b);
+      renderBrandChips(brands);
+      render();
+    };
+    el.appendChild(chip);
+  });
+}
+
+function renderGpuChips(tiers) {
+  const el = $("#gpu-chips");
+  el.innerHTML = "";
+  const ordered = GPU_TIER_ORDER.filter(t => tiers.includes(t));
+  ordered.forEach(t => {
+    const chip = document.createElement("div");
+    chip.className = "chip" + (activeGpuTiers.has(t) ? " active" : "");
+    chip.textContent = GPU_TIER_LABEL[t] || t;
+    chip.onclick = () => {
+      activeGpuTiers.has(t) ? activeGpuTiers.delete(t) : activeGpuTiers.add(t);
+      renderGpuChips(tiers);
+      render();
+    };
+    el.appendChild(chip);
+  });
+}
+
+function applyFilters(rows) {
+  const minScore = Number($("#score-slider").value);
+  const priceMin = parseFloat($("#price-min").value);
+  const priceMax = parseFloat($("#price-max").value);
+  const minRam = Number($("#ram-filter").value);
+  const text = $("#text-filter").value.trim().toLowerCase();
+  const hideSold = $("#hide-sold-toggle").checked;
+
+  return rows.filter(r => {
+    if (hideSold && r.active === false) return false;
+    if (r.score < minScore) return false;
+    if (!isNaN(priceMin) && r.price < priceMin) return false;
+    if (!isNaN(priceMax) && r.price > priceMax) return false;
+    if (minRam && (!r.ram_gb || r.ram_gb < minRam)) return false;
+    if (activeBrands.size && !activeBrands.has(r.brand)) return false;
+    if (activeGpuTiers.size && !activeGpuTiers.has(r.gpu_tier)) return false;
+    if (text && !r.title.toLowerCase().includes(text)) return false;
+    return true;
+  });
+}
+
+function applySort(rows) {
+  const key = sortKey;
+  return [...rows].sort((a, b) => {
+    let av = a[key], bv = b[key];
+    if (key === "title" || key === "brand" || key === "gpu" || key === "cpu") {
+      av = (av || "").toLowerCase(); bv = (bv || "").toLowerCase();
+      if (av < bv) return -1 * sortDir;
+      if (av > bv) return 1 * sortDir;
+      return 0;
+    }
+    av = av === null || av === undefined ? -Infinity : av;
+    bv = bv === null || bv === undefined ? -Infinity : bv;
+    return (av - bv) * sortDir;
+  });
+}
+
+function render() {
+  const filtered = applySort(applyFilters(allListings));
+  const tbody = $("#table-body");
+  tbody.innerHTML = "";
+
+  document.getElementById("empty-state").style.display = filtered.length ? "none" : "block";
+
+  for (const r of filtered) {
+    const tr = document.createElement("tr");
+    const brandTag = r.brand ? `<span class="brand-tag">${r.brand}</span>` : "";
+    const soldTag = r.active === false ? `<span class="sold-tag">SOLD</span> ` : "";
+    const missingSpecs = !r.gpu || !r.ram_gb || !r.storage_gb;
+    const enrichBtn = (missingSpecs && !r.enriched)
+      ? `<button class="enrich-btn" data-item-id="${r.item_id}" title="Fetch full listing details to fill in missing specs">Fetch specs</button>`
+      : "";
+    tr.innerHTML = `
+      <td>${signalHtml(r.score)}</td>
+      <td class="price">$${r.price.toLocaleString(undefined, {maximumFractionDigits:0})}</td>
+      <td>${brandTag}</td>
+      <td class="title-cell">
+        <a href="${r.url}" target="_blank" rel="noopener">${soldTag}${r.title}</a>
+        <div class="subtags">${r.condition || ""}${r.query ? " · via \u201c" + r.query + "\u201d" : ""} ${enrichBtn}</div>
+      </td>
+      <td class="spec-cell ${r.ram_gb ? "" : "empty"}">${r.ram_gb ? r.ram_gb + "GB" : "—"}</td>
+      <td class="spec-cell ${r.gpu ? "" : "empty"}">${r.gpu || "—"}</td>
+      <td class="spec-cell ${r.cpu ? "" : "empty"}">${r.cpu || "—"}</td>
+      <td class="spec-cell ${r.storage_gb ? "" : "empty"}">${r.storage_gb ? (r.storage_gb >= 1024 ? (r.storage_gb/1024).toFixed(1) + "TB" : r.storage_gb + "GB") : "—"}</td>
+      <td class="spec-cell">${fmtAgo(r.last_seen)}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  document.querySelectorAll(".enrich-btn").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const itemId = btn.dataset.itemId;
+      btn.disabled = true;
+      btn.textContent = "Fetching...";
+      try {
+        const res = await fetch("/api/enrich", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({item_id: itemId})
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "enrich failed");
+        setStatus(`Updated specs for "${data.listing.title.slice(0, 50)}..."`);
+        await loadListings();
+      } catch (err) {
+        setStatus("Fetch specs failed: " + err.message, "error");
+        btn.disabled = false;
+        btn.textContent = "Fetch specs";
+      }
+    });
+  });
+
+  document.querySelectorAll("thead th").forEach(th => {
+    th.classList.toggle("sorted", th.dataset.key === sortKey);
+    th.querySelector(".arrow").textContent = th.dataset.key === sortKey ? (sortDir === -1 ? "▼" : "▲") : "";
+  });
+}
+
+document.querySelectorAll("thead th").forEach(th => {
+  th.addEventListener("click", () => {
+    const key = th.dataset.key;
+    if (sortKey === key) { sortDir *= -1; } else { sortKey = key; sortDir = -1; }
+    render();
+  });
+});
+
+$("#score-slider").addEventListener("input", (e) => {
+  $("#score-val").textContent = e.target.value;
+  render();
+});
+$("#price-min").addEventListener("input", render);
+$("#price-max").addEventListener("input", render);
+$("#ram-filter").addEventListener("change", render);
+$("#text-filter").addEventListener("input", render);
+$("#hide-sold-toggle").addEventListener("change", render);
+
+$("#reset-filters").addEventListener("click", () => {
+  $("#score-slider").value = 0; $("#score-val").textContent = "0";
+  $("#price-min").value = ""; $("#price-max").value = "";
+  $("#ram-filter").value = "0"; $("#text-filter").value = "";
+  activeBrands.clear(); activeGpuTiers.clear();
+  loadListings();
+});
+
+async function runSearch() {
+  const q = $("#search-input").value.trim();
+  if (!q) return;
+  $("#search-btn").disabled = true;
+  setStatus(`Searching eBay for "${q}"...`, "busy");
+  try {
+    const res = await fetch("/api/search", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({query: q})
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "search failed");
+    setStatus(`"${q}": ${data.results} results, ${data.new} new listing(s) added.`);
+    await loadListings();
+  } catch (e) {
+    setStatus("Search failed: " + e.message, "error");
+  } finally {
+    $("#search-btn").disabled = false;
+  }
+}
+$("#search-btn").addEventListener("click", runSearch);
+$("#search-input").addEventListener("keydown", (e) => { if (e.key === "Enter") runSearch(); });
+
+$("#rescan-btn").addEventListener("click", async () => {
+  $("#rescan-btn").disabled = true;
+  setStatus("Rescanning all watch queries — this can take a bit...", "busy");
+  try {
+    const res = await fetch("/api/rescan", {method: "POST"});
+    const data = await res.json();
+    const newTotal = data.results.reduce((sum, r) => sum + (r.new || 0), 0);
+    setStatus(`Rescan complete in ${data.elapsed_seconds}s — ${newTotal} new listing(s).`);
+    await loadListings();
+  } catch (e) {
+    setStatus("Rescan failed: " + e.message, "error");
+  } finally {
+    $("#rescan-btn").disabled = false;
+  }
+});
+
+$("#enrich-missing-btn").addEventListener("click", async () => {
+  $("#enrich-missing-btn").disabled = true;
+  setStatus("Fetching full listing details for rows missing specs...", "busy");
+  try {
+    const res = await fetch("/api/enrich_missing", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({limit: 40})
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "enrich_missing failed");
+    setStatus(`Filled in specs for ${data.enriched}/${data.attempted} listing(s)${data.failed ? `, ${data.failed} failed` : ""}.`);
+    await loadListings();
+  } catch (e) {
+    setStatus("Fill in missing specs failed: " + e.message, "error");
+  } finally {
+    $("#enrich-missing-btn").disabled = false;
+  }
+});
+
+$("#sweep-sold-btn").addEventListener("click", async () => {
+  $("#sweep-sold-btn").disabled = true;
+  setStatus("Checking stale listings against eBay directly...", "busy");
+  try {
+    const res = await fetch("/api/sweep_sold", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({limit: 30})
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "sweep_sold failed");
+    setStatus(`Checked ${data.checked} stale listing(s), ${data.sold} sold/ended${data.errors ? `, ${data.errors} errors` : ""}.`);
+    await loadListings();
+  } catch (e) {
+    setStatus("Check for sold failed: " + e.message, "error");
+  } finally {
+    $("#sweep-sold-btn").disabled = false;
+  }
+});
+
+loadListings();
+</script>
+</body>
+</html>

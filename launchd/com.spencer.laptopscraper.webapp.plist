@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.spencer.laptopscraper.webapp</string>
+
+    <!-- EDIT THIS PATH to wherever you put the project folder -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>-c</string>
+        <string>set -a &amp;&amp; source .env &amp;&amp; set +a &amp;&amp; source venv/bin/activate &amp;&amp; exec ./webapp.sh</string>
+    </array>
+
+    <!-- Start on load, and restart automatically if it ever crashes -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/truckerbug/workspace/laptop-deal-scraper/data/webapp.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/truckerbug/workspace/laptop-deal-scraper/data/webapp.err.log</string>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/truckerbug/workspace/laptop-deal-scraper</string>
+</dict>
+</plist>
